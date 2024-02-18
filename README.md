@@ -1,4 +1,4 @@
-This Python script allows you to interact with the TradingView API to get real-time market data for specified trading pairs in different market categories.
+This project allows you to interact with the TradingView API to get real-time market data for specified trading pairs in different market categories.
 
 ## Project Owner
 
