@@ -6,6 +6,8 @@ import requests
 from websocket import create_connection
 import tkinter as tk
 from tkinter import ttk
+import csv
+from datetime import datetime
 
 class TradingViewApp:
     def __init__(self, root):
@@ -46,7 +48,12 @@ class TradingViewApp:
             self.symbol_text.config(state="disabled")
 
     def start_trading_view(self, pair, market):
-        main_logic(pair, market)
+        main_logic(pair, market, self.update_csv)
+
+    def update_csv(self, data):
+        with open('market_data.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([datetime.now().strftime('%Y-%m-%d %H:%M:%S'), data['symbol'], data['price'], data['change'], data['change_percentage'], data['volume']])
 
 def search(query, category):
     url = f"https://symbol-search.tradingview.com/symbol_search/?text={query}&type={category}"
@@ -87,7 +94,7 @@ def send_ping_packet(ws, result):
         ping_str = ping_str[0]
         ws.send(f"~m~{len(ping_str)}~m~{ping_str}")
 
-def socket_loop(ws):
+def socket_loop(ws, update_callback):
     while True:
         try:
             result = ws.recv()
@@ -103,11 +110,13 @@ def socket_loop(ws):
                     volume = prefix["v"].get("volume", None)
                     change = prefix["v"].get("ch", None)
                     change_percentage = prefix["v"].get("chp", None)
+                    data = {'symbol': symbol, 'price': price, 'change': change, 'change_percentage': change_percentage, 'volume': volume}
                     print(f"{symbol} -> {price=}, {change=}, {change_percentage=}, {volume=}")
-            else:
-                send_ping_packet(ws, result)
+                    update_callback(data)
+                else:
+                    send_ping_packet(ws, result)
         except KeyboardInterrupt:
-            print("\n Thank You!")
+            print("\nGoodbye!")
             exit(0)
         except Exception as e:
             print(f"ERROR: {e}\nTradingView message: {result}")
@@ -120,7 +129,7 @@ def get_symbol_id(pair, market):
     symbol_id = f"{broker.upper()}:{symbol_name.upper()}"
     return symbol_id
 
-def main_logic(pair, market):
+def main_logic(pair, market, update_callback):
     symbol_id = get_symbol_id(pair, market)
 
     trading_view_socket = "wss://data.tradingview.com/socket.io/websocket"
@@ -142,7 +151,7 @@ def main_logic(pair, market):
     )
     send_message(ws, "quote_add_symbols", [session, symbol_id])
 
-    socket_loop(ws)
+    socket_loop(ws, update_callback)
 
 if __name__ == "__main__":
     root = tk.Tk()
