@@ -106,6 +106,6 @@ def main(pair, market):
     socket_loop(ws)
 
 if __name__ == "__main__":
-    pair = "btcusdt"
+    pair = "ethusdt"
     market = "crypto"
     main(pair, market)
