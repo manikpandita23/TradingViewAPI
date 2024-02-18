@@ -4,6 +4,8 @@ import re
 import string
 import requests
 from websocket import create_connection
+import csv
+from datetime import datetime
 
 def search(query, category):
     url = f"https://symbol-search.tradingview.com/symbol_search/?text={query}&type={category}"
@@ -44,7 +46,7 @@ def send_ping_packet(ws, result):
         ping_str = ping_str[0]
         ws.send(f"~m~{len(ping_str)}~m~{ping_str}")
 
-def socket_loop(ws):
+def socket_loop(ws, csv_writer):
     while True:
         try:
             result = ws.recv()
@@ -60,7 +62,9 @@ def socket_loop(ws):
                     volume = prefix["v"].get("volume", None)
                     change = prefix["v"].get("ch", None)
                     change_percentage = prefix["v"].get("chp", None)
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     print(f"{symbol} -> {price=}, {change=}, {change_percentage=}, {volume=}")
+                    csv_writer.writerow([timestamp, symbol, price, change, change_percentage, volume])
             else:
                 send_ping_packet(ws, result)
         except KeyboardInterrupt:
@@ -81,9 +85,13 @@ def get_symbol_id(pair, market):
 def main():
     pair = input("Enter the trading pair: ").strip()
     market = input("Enter the market category: ").strip()
-    main_logic(pair, market)
+    csv_file = open('market_data.csv', 'a', newline='')
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(['Timestamp', 'Symbol', 'Price', 'Change', 'Change Percentage', 'Volume'])
+    main_logic(pair, market, csv_writer)
+    csv_file.close()
 
-def main_logic(pair, market):
+def main_logic(pair, market, csv_writer):
     symbol_id = get_symbol_id(pair, market)
 
     trading_view_socket = "wss://data.tradingview.com/socket.io/websocket"
@@ -105,7 +113,7 @@ def main_logic(pair, market):
     )
     send_message(ws, "quote_add_symbols", [session, symbol_id])
 
-    socket_loop(ws)
+    socket_loop(ws, csv_writer)
 
 if __name__ == "__main__":
     main()
