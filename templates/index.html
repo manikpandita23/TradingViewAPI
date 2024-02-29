@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Market Data</title>
+</head>
+<body>
+    <h1>TradingView Market Data</h1>
+    <form id="stream-form">
+        <label for="pair">Trading Pair:</label>
+        <input type="text" name="pair" required>
+        <br>
+        <label for="market">Market Category:</label>
+        <input type="text" name="market" required>
+        <br>
+        <button type="button" onclick="startStream()">Start Stream</button>
+    </form>
+
+    <div id="stream-data">
+        <!-- Streamed data will be displayed here -->
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('stream_data', function(data) {
+            var div = document.getElementById('stream-data');
+            div.innerHTML += `<p>${data.timestamp} - ${data.symbol}: ${data.price}, ${data.change}, ${data.change_percentage}, ${data.volume}</p>`;
+        });
+
+        socket.on('stream_error', function(data) {
+            alert(data.message);
+        });
+
+        function startStream() {
+            var pair = document.forms['stream-form']['pair'].value;
+            var market = document.forms['stream-form']['market'].value;
+            socket.emit('start_stream', {'pair': pair, 'market': market});
+        }
+    </script>
+</body>
+</html>
