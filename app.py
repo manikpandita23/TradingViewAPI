@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from flask_socketio import SocketIO, create_server
+from flask_socketio import SocketIO
 from datetime import datetime
 from threading import Thread
 import csv
@@ -123,5 +123,4 @@ def send_ping_packet(ws, result):
         ws.send(f"~m~{len(ping_str)}~m~{ping_str}")
 
 if __name__ == "__main__":
-    socketio = SocketIO(app, async_mode='eventlet')
     socketio.run(app, debug=True)
