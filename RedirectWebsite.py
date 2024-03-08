@@ -4,7 +4,6 @@ import re
 import string
 import webbrowser
 import requests
-
 from websocket import create_connection
 
 def search(query, category):
